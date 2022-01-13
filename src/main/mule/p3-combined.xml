@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd ">
+    <http:listener-config name="p3-combined-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="p3-combined-config" api="resource::585949f7-fc35-4da9-8cd4-522ed1608a15:p3-combined:1.0.0:raml:zip:p3-combined.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <http:request-config name="HTTP_Request_configuration_Sebastian" doc:name="HTTP Request configuration" doc:id="b395837c-ee7c-46bb-80fb-e0e614840854" >
+		<http:request-connection host="s4ving4ccount.us-e2.cloudhub.io" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration_Adrian" doc:name="HTTP Request configuration" doc:id="1387cd2f-7142-42f8-891a-bb89e574a11a">
+		<http:request-connection host="net-revature-p3-crypto-wojcik.us-e2.cloudhub.io" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration_Furrukh" doc:name="HTTP Request configuration" doc:id="f2765c40-b55f-40d4-b39f-9f99c8a95c7d" >
+		<http:request-connection host="bankapp.us-e2.cloudhub.io" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration_Piotr" doc:name="HTTP Request configuration" doc:id="ee9769a0-08c1-4ff8-bfc7-b858a583c8dc" >
+		<http:request-connection host="p3-piotrek.us-e2.cloudhub.io" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="4c9d7486-4972-410b-93c9-06af3aff64b0" >
+		<http:request-connection host="kubala2908-p3.us-e2.cloudhub.io" />
+	</http:request-config>
+	<flow name="p3-combined-main">
+        <http:listener config-ref="p3-combined-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="p3-combined-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="p3-combined-console">
+        <http:listener config-ref="p3-combined-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="p3-combined-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\account\(id):p3-combined-config">
+		<http:request method="GET" doc:name="Get Specific Account" doc:id="9d9c5530-81ea-4f00-9f70-7dd95b2ba4a7" config-ref="HTTP_Request_configuration" path="/account/{id}">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	customer_id : attributes.headers.customer_id
+}]]]></http:headers>
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	id : attributes.uriParams.id
+}]]]></http:uri-params>
+		</http:request>
+    </flow>
+    <flow name="get:\accounts:p3-combined-config">
+		<choice doc:name="Choice" doc:id="06316ec4-c911-4911-a4b5-edf54d8fc379" >
+			<when expression='attributes.queryParams.kind == "checking"'>
+				<http:request method="GET" doc:name="Get User's Checking Accounts" doc:id="74ce9b73-49cf-4aaf-bad9-231770feb686" config-ref="HTTP_Request_configuration" path="/accounts">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	customer_id : attributes.headers.customer_id
+}]]]></http:headers>
+			<http:query-params><![CDATA[#[output application/java
+---
+{
+	kind : "checking"
+}]]]></http:query-params>
+		</http:request>
+			</when>
+			<otherwise >
+				<choice doc:name="Choice" doc:id="7cff805c-1211-4c3b-8672-249551aa118c" >
+					<when expression='attributes.queryParams.kind == "saving"'>
+						<http:request method="GET" doc:name="Get User's Saving Accounts" doc:id="53047941-dcb4-4cd5-b6d4-a99c47ebf6aa" config-ref="HTTP_Request_configuration" path="/accounts">
+					<http:headers><![CDATA[#[output application/java
+---
+{
+	customer_id : attributes.headers.customer_id
+}]]]></http:headers>
+					<http:query-params><![CDATA[#[output application/java
+---
+{
+	kind : "saving"
+}]]]></http:query-params>
+				</http:request>
+					</when>
+					<otherwise >
+						<http:request method="GET" doc:name="Get User's Other Account" doc:id="c198672a-4301-4dbc-a977-514274204395" config-ref="HTTP_Request_configuration" path="/accounts" >
+							<http:headers ><![CDATA[#[output application/java
+---
+{
+	customer_id : attributes.headers.customer_id
+}]]]></http:headers>
+						</http:request>
+					</otherwise>
+				</choice>
+			</otherwise>
+		</choice>
+    </flow>
+    <flow name="post:\add\checking-account:application\json:p3-combined-config">
+		<http:request method="POST" doc:name="Create Checking Account" doc:id="e9644e38-cf4e-4eec-97a9-2152783d2e5b" config-ref="HTTP_Request_configuration" path="/add/checking-account">
+			<http:body ><![CDATA[#[{
+    balance: payload.balance,
+    threshold: payload.threshold
+}]]]></http:body>
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	customer_id : attributes.headers.customer_id
+}]]]></http:headers>
+		</http:request>
+    </flow>
+	<flow name="get:\checkAssetsValue:p3-combined-config">
+		<http:request method="GET" doc:name="Check All Cryptos Value In US Dollars" doc:id="814e43f9-5e9f-44c6-a8c1-4101216525ee" config-ref="HTTP_Request_configuration_Adrian" path="/checkAssetsValue" >
+		</http:request>
+    </flow>
+	<flow name="get:\cryptoWallet:p3-combined-config">
+		<http:request method="GET" doc:name="Get Crypto Assets" doc:id="adb78cc0-137b-4b79-a5a6-cc3fcf982ac8" config-ref="HTTP_Request_configuration_Adrian" path="/cryptoWallet" />
+    </flow>
+    <flow name="post:\cryptoWallet:p3-combined-config">
+		<http:request method="POST" doc:name="Add Crypto Asset" doc:id="f48e8df3-5def-45a3-8be4-f641d8393c77" config-ref="HTTP_Request_configuration_Adrian" path="/cryptoWallet" >
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	quantity : attributes.queryParams.qunantity,
+	name : attributes.queryParams.name
+}]]]></http:query-params>
+		</http:request>
+    </flow>
+	<flow name="get:\currentValue:p3-combined-config">
+		<http:request method="GET" doc:name="Get Value Of Crypto (One)" doc:id="387242f6-b7da-4f71-9e85-b5cddb5fd748" config-ref="HTTP_Request_configuration_Adrian" path="/currentValue" >
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	quantity : attributes.queryParams.qunantity,
+	name : attributes.queryParams.name
+}]]]></http:query-params>
+		</http:request>
+    </flow>
+	<flow name="post:\makeTransfer:application\json:p3-combined-config">
+		<http:request method="POST" doc:name="Make Transfer" doc:id="7cd77a95-b609-4a5d-80a9-1f14b7b6b44b" config-ref="HTTP_Request_configuration_Furrukh" path="/makeTransfer" >
+			<http:body ><![CDATA[#[{
+    change: payload.change,
+    on_date: payload.on_date
+}]]]></http:body>
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	destination : attributes.queryParams.destination,
+	source : attributes.queryParams.source
+}]]]></http:query-params>
+		</http:request>
+    </flow>
+	<flow name="get:\trackIncome\(data):p3-combined-config">
+		<http:request method="GET" doc:name="Check Account'ss Income" doc:id="b98a54b8-6f0c-4150-855a-35607e52c20e" config-ref="HTTP_Request_configuration_Furrukh" path="/trackIncome/{data}" >
+			<http:body ><![CDATA[payload]]></http:body>
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	data : attributes.uriParams.data
+}]]]></http:uri-params>
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	accountId : attributes.queryParams.accountId
+}]]]></http:query-params>
+		</http:request>
+    </flow>
+	<flow name="post:\scheduleTransfer:application\json:p3-combined-config">
+		<http:request method="POST" doc:name="Schedule_Transfer" doc:id="9462d515-c3b0-445a-b5fa-1f59e5502b7e" config-ref="HTTP_Request_configuration_Furrukh" path="/scheduleTransfer" >
+			<http:body ><![CDATA[#[{
+	amount: payload.amount,
+    sender: payload.sender,
+    receiver: payload.receiver,
+    on_date: payload.on_date
+}]]]></http:body>
+		</http:request>
+    </flow>
+	<flow name="get:\customers:p3-combined-config">
+		<http:request method="GET" doc:name="Get All Customers" doc:id="4ca6c03a-927d-4f49-8186-9774912dc1eb" config-ref="HTTP_Request_configuration_Piotr" path="/customers" >
+		</http:request>
+    </flow>
+	<flow name="get:\customers\(customer_id):p3-combined-config">
+		<http:request method="GET" doc:name="Get Specific Customer" doc:id="344f49e8-586d-4543-bc5b-ec3f4c61dc30" config-ref="HTTP_Request_configuration_Piotr" path="customers/{customer_id}" >
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	customer_id : attributes.uriParams.customer_id
+}]]]></http:uri-params>
+		</http:request>
+    </flow>
+	<flow name="post:\customers\register:application\json:p3-combined-config">
+		<http:request method="POST" doc:name="Register" doc:id="88dadf7c-d206-42d3-9a0d-9d6f9ad1a843" config-ref="HTTP_Request_configuration_Piotr" path="/customers/register" >
+			<http:body ><![CDATA[#[{
+	login: payload.login,
+	password: payload.password,
+	firstname: payload.firstname,
+	lastname: payload.lastname,
+	email: payload.email
+}]]]></http:body>
+		</http:request>
+    </flow>
+	<flow name="get:\customers\login:p3-combined-config">
+		<http:request method="GET" doc:name="Login" doc:id="a84bf2c8-2de1-4de4-83d7-80b56269c43d" config-ref="HTTP_Request_configuration_Piotr" path="/customers/login" >
+			<http:body ><![CDATA[payload]]></http:body>
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	password : attributes.headers.password,
+	login : attributes.headers.login
+}]]]></http:headers>
+		</http:request>
+    </flow>
+	<flow name="get:\customers\resetPassword:p3-combined-config">
+		<http:request method="GET" doc:name="Reset Password" doc:id="a5c45745-7571-4627-b65d-4d0077fbe87b" config-ref="HTTP_Request_configuration_Piotr" path="/customers/resetPassword" >
+			<http:body ><![CDATA[payload]]></http:body>
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	newPassword : attributes.headers.password,
+	login : attributes.headers.login
+}]]]></http:headers>
+		</http:request>
+    </flow>
+    <flow name="post:\add\saving:application\json:p3-combined-config">
+		<http:request method="POST" doc:name="Create Saving Account" doc:id="934874a9-c3b1-45a0-aa86-03cda77fb4c1" config-ref="HTTP_Request_configuration_Sebastian" path="/addAccount/saving" >
+			<http:body ><![CDATA[#[{
+	balance: payload.balance,
+	threshold: payload.threshold
+}]]]></http:body>
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	customer_id : attributes.headers.customer_id
+}]]]></http:headers>
+		</http:request>
+    </flow>
+</mule>
